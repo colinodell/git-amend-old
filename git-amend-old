@@ -14,7 +14,7 @@ fi
 PREVBRANCH=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 TMPBRANCH="tmp-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 16 | head -n 1)"
 
-# 0 - Commit changes
+# Commit all staged changes
 if ! git commit -m "MERGE $TARGETHASH"
   then
     echo "Failed to commit changes.  Did you forget to add them?"
@@ -23,11 +23,11 @@ fi
 
 NEWCHANGES=$(git rev-parse HEAD)
 
-# 1 - Stash any other changes
+# Stash any other changes
 DIRTYFILECOUNT=$(git status --porcelain 2>/dev/null| grep "^ M" | wc -l)
 [ $DIRTYFILECOUNT -ne 0 ] && git stash save --keep-index
 
-# 2 - Switch to a temporary branch
+# Switch to a temporary branch
 if ! git checkout -b $TMPBRANCH
   then
     echo "Failed to checkout a temporary branch. Please check your repository's state and try again."
@@ -35,7 +35,7 @@ if ! git checkout -b $TMPBRANCH
     exit 1
 fi
 
-# 3 - Rewind to the target commit
+# Rewind to the target commit
 if ! git reset --hard $TARGETHASH
   then
     echo "Failed to rewind to target commit."
@@ -45,7 +45,7 @@ if ! git reset --hard $TARGETHASH
     exit 1
 fi
 
-# 4 - Stage changes
+# Use cherry-pick to stage the changes
 if ! git cherry-pick -n $NEWCHANGES
   then
     echo "Failed to apply new changes."
@@ -55,7 +55,7 @@ if ! git cherry-pick -n $NEWCHANGES
     exit 1
 fi
 
-# 4 - Merge staged changes at this point
+# Merge staged changes at this point
 if ! git commit --amend
   then
     echo "Failed to merge changes into the target commit."
@@ -65,7 +65,7 @@ if ! git commit --amend
     exit 1
 fi
 
-# 5 - Finally rebase
+# Finally we rebase to include the proceeding commits
 if ! git rebase --onto $TMPBRANCH HEAD@{1} $PREVBRANCH
   then
     echo "Failed to perform the final rebase."
@@ -75,9 +75,11 @@ if ! git rebase --onto $TMPBRANCH HEAD@{1} $PREVBRANCH
     exit 1
 fi
 
+# Pop any uncommitted changes from the start
 [ $DIRTYFILECOUNT -ne 0 ] && git stash pop
 git branch -d $TMPBRANCH
 
+# Great success!
 echo "Successfully merged changes with commit $TARGETHASH."
 exit 0
 
