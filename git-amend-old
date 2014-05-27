@@ -1,0 +1,89 @@
+#!/bin/bash
+#
+# Copyright (c) 2014 Colin O'Dell
+#
+
+TARGETHASH=$1
+
+if [ -z "$1" ]
+  then
+    echo "Please provide the target commit hash/ref."
+    exit 1
+fi
+
+PREVBRANCH=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
+TMPBRANCH="tmp-$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 16 | head -n 1)"
+
+# 0 - Commit changes
+if ! git commit -m "MERGE $TARGETHASH"
+  then
+    echo "Failed to commit changes.  Did you forget to add them?"
+    exit 1
+fi
+
+NEWCHANGES=$(git rev-parse HEAD)
+
+# 1 - Stash any other changes
+DIRTYFILECOUNT=$(git status --porcelain 2>/dev/null| grep "^ M" | wc -l)
+[ $DIRTYFILECOUNT -ne 0 ] && git stash save --keep-index
+
+# 2 - Switch to a temporary branch
+if ! git checkout -b $TMPBRANCH
+  then
+    echo "Failed to checkout a temporary branch. Please check your repository's state and try again."
+    [ $DIRTYFILECOUNT -ne 0 ] && git stash pop
+    exit 1
+fi
+
+# 3 - Rewind to the target commit
+if ! git reset --hard $TARGETHASH
+  then
+    echo "Failed to rewind to target commit."
+    git checkout $PREVBRANCH
+    [ $DIRTYFILECOUNT -ne 0 ] && git stash pop
+    git branch -D $TMPBRANCH
+    exit 1
+fi
+
+echo "Target hash: $TARGETHASH"
+echo "Prev branch: $PREVBRANCH"
+echo "Temp branch: $TMPBRANCH"
+echo "New changes: $NEWCHANGES"
+echo "Dirty files: $DIRTYFILECOUNT"
+
+# 4 - Stage changes
+if ! git cherry-pick -n $NEWCHANGES
+  then
+    echo "Failed to apply new changes."
+    git checkout $PREVBRANCH
+    [ $DIRTYFILECOUNT -ne 0 ] && git stash pop
+    git branch -D $TMPBRANCH
+    exit 1
+fi
+
+# 4 - Merge staged changes at this point
+if ! git commit --amend
+  then
+    echo "Failed to merge changes into the target commit."
+    git checkout $PREVBRANCH
+    [ $DIRTYFILECOUNT -ne 0 ] && git stash pop
+    git branch -D $TMPBRANCH
+    exit 1
+fi
+
+# 5 - Finally rebase
+if ! git rebase --onto $TMPBRANCH HEAD@{1} $PREVBRANCH
+  then
+    echo "Failed to perform the final rebase."
+    git checkout $PREVBRANCH
+    [ $DIRTYFILECOUNT -ne 0 ] && git stash pop
+    git branch -D $TMPBRANCH
+    exit 1
+fi
+
+[ $DIRTYFILECOUNT -ne 0 ] && git stash pop
+git branch -d $TMPBRANCH
+
+echo "Successfully merged changes with commit $TARGETHASH."
+exit 0
+
