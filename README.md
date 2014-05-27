@@ -5,6 +5,8 @@ Bash script to amend older commits with staged changes.
 
 Think of it like `git commit --amend`, but for older commits.
 
+Special thanks to [@VonC](https://github.com/VonC) for [this StackOverflow answer](http://stackoverflow.com/a/3940887/158766) which provided the basis for this script.
+
 Usage:
 ------
 
