@@ -45,12 +45,6 @@ if ! git reset --hard $TARGETHASH
     exit 1
 fi
 
-echo "Target hash: $TARGETHASH"
-echo "Prev branch: $PREVBRANCH"
-echo "Temp branch: $TMPBRANCH"
-echo "New changes: $NEWCHANGES"
-echo "Dirty files: $DIRTYFILECOUNT"
-
 # 4 - Stage changes
 if ! git cherry-pick -n $NEWCHANGES
   then
