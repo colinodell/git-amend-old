@@ -7,7 +7,9 @@ Think of it like `git commit --amend`, but for older commits.
 
 Special thanks to [@VonC](https://github.com/VonC) for [this StackOverflow answer](http://stackoverflow.com/a/3940887/158766) which provided the basis for this script.
 
-**Note:** Using `git commit --fixup=<hash> && git rebase -i --autosquash <hash>^` is a more-modern (and probably more-reliable) way of doing this.  It's not as automated but it does offer more flexibility.  Check it out :)
+~~**Note:** Using `git commit --fixup=<hash> && git rebase -i --autosquash <hash>^` is a more-modern (and probably more-reliable) way of doing this.  It's not as automated but it does offer more flexibility.  Check it out :)~~
+
+**For a simpler solution, check out this `git fixup` alias: https://www.colinodell.com/blog/201803/four-useful-git-aliases**
 
 Usage:
 ------
