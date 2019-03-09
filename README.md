@@ -1,7 +1,9 @@
 git-amend-old (deprecated)
 ==========================
 
-**For a simpler solution, check out this `git fixup` alias: https://www.colinodell.com/blog/201803/four-useful-git-aliases**
+:warning: **For a simpler solution, check out this `git fixup` alias: https://www.colinodell.com/blog/201803/four-useful-git-aliases** :warning:
+
+---
 
 Bash script to amend older commits with staged changes.
 
